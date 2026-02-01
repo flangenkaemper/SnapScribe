@@ -1,0 +1,9 @@
+{
+    "api_key": "",
+    "active_mode": "local",
+    "auto_copy": true,
+    "minimize_to_tray": true,
+    "hotkey_record": "<ctrl>+<alt>+s",
+    "hotkey_show": "<ctrl>+<alt>+o",
+    "local_model_size": "medium"
+}
