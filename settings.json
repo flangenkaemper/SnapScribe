@@ -2,8 +2,8 @@
     "api_key": "",
     "active_mode": "local",
     "auto_copy": true,
-    "minimize_to_tray": true,
-    "hotkey_record": "<ctrl>+<alt>+s",
-    "hotkey_show": "<ctrl>+<alt>+o",
+    "minimize_to_tray": false,
+    "hotkey_record": "windows+shift+q",
+    "hotkey_show": "windows+shift+d",
     "local_model_size": "medium"
 }
