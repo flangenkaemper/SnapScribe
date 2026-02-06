@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QHBoxLayout,
 from PyQt6.QtCore import pyqtSignal, QTimer
 from logic.backend import ConfigManager
 from ui.widgets import HotkeyLineEdit
+from ui import i18n as _i18n
 
 class SettingsDialog(QDialog):
     settings_saved = pyqtSignal()
@@ -10,8 +11,9 @@ class SettingsDialog(QDialog):
     def __init__(self, config: ConfigManager, parent=None):
         super().__init__(parent)
         self.config = config
-        self.setWindowTitle("SnapScribe Einstellungen")
-        self.resize(400, 350)
+        self.current_lang = config.get("language") or "en"
+        self.setWindowTitle(_i18n.t("settings_title", self.current_lang))
+        self.resize(400, 380)
         
         # Hier speichern wir die funktionierenden Werte vor dem Speichern
         self.backup_values = {}
@@ -37,28 +39,34 @@ class SettingsDialog(QDialog):
 
         self.inp_hk_rec = HotkeyLineEdit("")
         self.inp_hk_rec.hotkey_detected.connect(self.on_hotkey_rec_detected)
-        form.addRow("Hotkey Aufnahme:", self.inp_hk_rec)
+        form.addRow(_i18n.t("hotkey_record", self.current_lang), self.inp_hk_rec)
         
         self.inp_hk_show = HotkeyLineEdit("")
         self.inp_hk_show.hotkey_detected.connect(self.on_hotkey_show_detected)
-        form.addRow("Hotkey Fenster:", self.inp_hk_show)
+        form.addRow(_i18n.t("hotkey_show", self.current_lang), self.inp_hk_show)
+
+        # Sprache
+        self.combo_lang = QComboBox()
+        self.combo_lang.addItem(_i18n.t("english", "en"), "en")
+        self.combo_lang.addItem(_i18n.t("german", "en"), "de")
+        form.addRow(_i18n.t("language_label", self.current_lang), self.combo_lang)
 
         self.layout.addLayout(form)
 
-        self.cb_copy = QCheckBox("Text automatisch kopieren")
+        self.cb_copy = QCheckBox(_i18n.t("auto_copy", self.current_lang))
         self.layout.addWidget(self.cb_copy)
         
-        self.cb_tray = QCheckBox("In Tray minimieren")
+        self.cb_tray = QCheckBox(_i18n.t("minimize_tray", self.current_lang))
         self.layout.addWidget(self.cb_tray)
 
         btn_layout = QHBoxLayout()
         
-        self.btn_save = QPushButton("Speichern")
+        self.btn_save = QPushButton(_i18n.t("save", self.current_lang))
         self.btn_save.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold;")
         self.btn_save.clicked.connect(self.save_settings)
         btn_layout.addWidget(self.btn_save)
 
-        self.btn_cancel = QPushButton("Abbrechen (Reset)")
+        self.btn_cancel = QPushButton(_i18n.t("cancel_reset", self.current_lang))
         self.btn_cancel.clicked.connect(self.reset_settings)
         btn_layout.addWidget(self.btn_cancel)
         
@@ -72,6 +80,11 @@ class SettingsDialog(QDialog):
         
         self.inp_hk_rec.setText(self.config.get("hotkey_record"))
         self.inp_hk_show.setText(self.config.get("hotkey_show"))
+
+        # Sprache laden (Code in data role)
+        lang = self.config.get("language") or "en"
+        idx = 0 if lang == "en" else 1
+        self.combo_lang.setCurrentIndex(idx)
         
         self.cb_copy.setChecked(self.config.get("auto_copy"))
         self.cb_tray.setChecked(self.config.get("minimize_to_tray"))
@@ -103,12 +116,18 @@ class SettingsDialog(QDialog):
         self.config.set("auto_copy", self.cb_copy.isChecked())
         self.config.set("minimize_to_tray", self.cb_tray.isChecked())
         
+        # Sprache speichern (Datenrolle)
+        lang_code = self.combo_lang.currentData()
+        if lang_code:
+            self.config.set("language", lang_code)
+        
         # 3. Signalisieren
         self.settings_saved.emit()
         
         # Feedback Button
         original_text = self.btn_save.text()
-        self.btn_save.setText("Gespeichert! ✓")
+        saved_text = _i18n.t("saved", self.config.get("language"))
+        self.btn_save.setText(saved_text)
         QTimer.singleShot(1500, lambda: self.btn_save.setText(original_text))
 
     def reset_settings(self):

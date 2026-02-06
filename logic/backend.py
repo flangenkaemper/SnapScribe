@@ -18,7 +18,8 @@ class ConfigManager:
         self.default = {
             "api_key": "", "active_mode": "local", "auto_copy": True,
             "minimize_to_tray": True, "hotkey_record": "windows+shift+q",
-            "hotkey_show": "windows+shift+d", "local_model_size": "base"
+            "hotkey_show": "windows+shift+d", "local_model_size": "base",
+            "language": "en"
         }
         self.settings = self.load()
 

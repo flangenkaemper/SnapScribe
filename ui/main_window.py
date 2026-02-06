@@ -8,6 +8,7 @@ from PyQt6.QtGui import QIcon, QAction, QCursor, QColor
 
 from ui.settings_dialog import SettingsDialog
 from ui.visualizer import RecordingOverlay
+from ui import i18n as _i18n
 from logic.backend import get_asset_path
 
 class MainWindow(QMainWindow):
@@ -28,6 +29,9 @@ class MainWindow(QMainWindow):
 
         self.init_ui()
         self.init_tray()
+        
+        # Sprache initial anwenden
+        self.apply_language()
 
     def init_ui(self):
         self.setWindowTitle("SnapScribe")
@@ -42,7 +46,8 @@ class MainWindow(QMainWindow):
 
         # 1. Header
         header = QHBoxLayout()
-        self.lbl_status = QLabel("Bereit")
+        lang = self.config.get("language") or "en"
+        self.lbl_status = QLabel(_i18n.t("ready", lang))
         self.lbl_status.setStyleSheet("color: #666;")
         header.addWidget(self.lbl_status)
         
@@ -60,7 +65,7 @@ class MainWindow(QMainWindow):
         
         # Seite 1: Text Area
         self.text_area = QTextEdit()
-        self.text_area.setPlaceholderText("Transkription erscheint hier...")
+        self.text_area.setPlaceholderText(_i18n.t("placeholder_text", lang))
         self.text_area.setMinimumHeight(80)
         self.text_area.setFrameShape(QFrame.Shape.NoFrame)
         self.text_area.textChanged.connect(self.adjust_text_height)
@@ -157,7 +162,8 @@ class MainWindow(QMainWindow):
             self.rec_indicator.show()
             self.action_container.setCurrentWidget(self.btn_confirm)
             
-            self.lbl_status.setText("Aufnahme läuft...")
+            lang = self.config.get("language") or "en"
+            self.lbl_status.setText(_i18n.t("recording", lang))
             self.stack.setFixedHeight(120) 
 
     def finish_recording(self):
@@ -180,7 +186,8 @@ class MainWindow(QMainWindow):
         
         # 4. Buttons resetten
         self.reset_buttons_default()
-        self.lbl_status.setText("Abgebrochen")
+        lang = self.config.get("language") or "en"
+        self.lbl_status.setText(_i18n.t("cancelled", lang))
         self.adjust_text_height()
 
     def reset_ui_state_to_loading(self):
@@ -189,7 +196,8 @@ class MainWindow(QMainWindow):
         self.btn_cancel.show()
         
         self.stack.setCurrentWidget(self.text_area)
-        self.lbl_status.setText("Warte auf Transkription...")
+        lang = self.config.get("language") or "en"
+        self.lbl_status.setText(_i18n.t("waiting_transcription", lang))
 
     def reset_buttons_default(self):
         self.btn_cancel.hide()
@@ -213,13 +221,14 @@ class MainWindow(QMainWindow):
     def on_transcription_finished(self, text):
         self.loading_bar.hide()
         self.reset_buttons_default()
+        lang = self.config.get("language") or "en"
         
         if text: 
-            self.lbl_status.setText("✅ Fertig")
+            self.lbl_status.setText(_i18n.t("finished", lang))
             self.text_area.setPlainText(text)
             if self.config.get("auto_copy"): pyperclip.copy(text)
         else:
-            self.lbl_status.setText("Bereit")
+            self.lbl_status.setText(_i18n.t("ready", lang))
             
         self.adjust_text_height()
         self.showNormal()
@@ -261,8 +270,11 @@ class MainWindow(QMainWindow):
         self.settings_dlg.exec()
 
     def on_settings_changed(self):
-        self.update_status("Einstellungen gespeichert.")
+        lang = self.config.get("language") or "en"
+        self.update_status(_i18n.t("settings_saved", lang))
         self.hk_manager.update_hotkeys()
+        # Sprache neu anwenden nach Speichern
+        self.apply_language()
         threading.Thread(target=self._reload_model_thread, daemon=True).start()
 
     def _reload_model_thread(self):
@@ -279,8 +291,9 @@ class MainWindow(QMainWindow):
         title_action.setEnabled(False)
         self.tray_menu.addAction(title_action)
         self.tray_menu.addSeparator()
-        self.tray_menu.addAction("Öffnen", self.showNormal)
-        self.tray_menu.addAction("Beenden", self.close_app)
+        # Diese werden in apply_language aktualisiert
+        self.tray_action_open = self.tray_menu.addAction("Open", self.showNormal)
+        self.tray_action_exit = self.tray_menu.addAction("Exit", self.close_app)
         self.tray.activated.connect(self.on_tray_activated)
         self.tray.show()
 
@@ -294,6 +307,22 @@ class MainWindow(QMainWindow):
             self.showNormal()
             self.activateWindow()
             self.raise_()
+
+    def apply_language(self):
+        """Wendet die aktuelle Spracheinstellung auf alle UI-Elemente an"""
+        lang = self.config.get("language") or "en"
+        
+        # Status-Label (nur wenn nicht gerade aufnehmen)
+        if not self.transcriber.recording:
+            self.lbl_status.setText(_i18n.t("ready", lang))
+        
+        # Placeholder-Text im Textfeld
+        self.text_area.setPlaceholderText(_i18n.t("placeholder_text", lang))
+        
+        # Tray-Menu Texte anpassen (sofern schon angelegt)
+        if hasattr(self, "tray_action_open") and hasattr(self, "tray_action_exit"):
+            self.tray_action_open.setText(_i18n.t("open", lang))
+            self.tray_action_exit.setText(_i18n.t("exit", lang))
 
     def close_app(self):
         self.tray.hide()
