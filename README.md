@@ -1,10 +1,11 @@
 # SnapScribe
 A fast, lightweight tool to record and transcribe audio instantly using Whisper.
 
-# Use SnapScribe
+# Install & Run SnapScribe
 Open the Releases Section on the right and choose a Version. You will find details there, e.g. on how to install/run, recommended specs, etc. 
 
 # Development
+Start of Development Section
 # Requirements & Setup
 Uses poetry for dependency/package management, see: https://python-poetry.org/docs/
 
